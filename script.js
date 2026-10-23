@@ -1,7 +1,5 @@
 const boardElement = document.getElementById('board');
 const statusElement = document.getElementById('status');
-const mangaOverlay = document.getElementById('manga-overlay');
-const mangaText = document.getElementById('manga-text');
 const modeSelect = document.getElementById('mode-select');
 const restartBtn = document.getElementById('restart-btn');
 
@@ -255,51 +253,32 @@ function processCaptures(r, c, player) {
     const captured = getCaptures(boardState, r, c, player);
 
     if (captured.length > 0) {
-        triggerMangaAnimation();
+        const texts = ["BAM!", "SLASH!", "CRASH!", "BOOM!", "POW!"];
+
         captured.forEach(pos => {
             boardState[pos.r][pos.c] = null;
             const cell = document.querySelector(`.cell[data-r="${pos.r}"][data-c="${pos.c}"]`);
             const p = cell.querySelector('.piece');
             if (p) {
+                // Add local floating text
+                const textEl = document.createElement('div');
+                textEl.classList.add('local-comic-text');
+                textEl.textContent = texts[Math.floor(Math.random() * texts.length)];
+                // Assign a color based on the capturing player
+                const color = player === 'red' ? 'red' : 'cyan';
+                textEl.style.textShadow = `1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 2px 2px 4px ${color}`;
+
+                cell.appendChild(textEl);
+
                 p.classList.add('captured-anim');
+
                 setTimeout(() => {
-                    if (cell.contains(p)) {
-                        cell.removeChild(p);
-                    }
-                }, 500); // Wait for animation
+                    if (cell.contains(p)) cell.removeChild(p);
+                    if (cell.contains(textEl)) cell.removeChild(textEl);
+                }, 800); // Wait for both animations
             }
         });
     }
-}
-
-function triggerMangaAnimation() {
-    // Trigger screen shake
-    document.body.classList.add('shake');
-
-    // Show manga overlay and text
-    mangaOverlay.classList.remove('hidden');
-
-    // Randomize text and color
-    const texts = ["BAM!", "SLASH!", "CRASH!", "BOOM!"];
-    const colors = ["red", "orange", "yellow", "cyan"];
-    mangaText.textContent = texts[Math.floor(Math.random() * texts.length)];
-    mangaText.style.textShadow = `
-        -4px -4px 0 #000,
-        4px -4px 0 #000,
-        -4px 4px 0 #000,
-        4px 4px 0 #000,
-        10px 10px 0px ${colors[Math.floor(Math.random() * colors.length)]}
-    `;
-
-    // Re-trigger animation
-    mangaText.style.animation = 'none';
-    mangaText.offsetHeight; // Trigger reflow
-    mangaText.style.animation = null;
-
-    setTimeout(() => {
-        document.body.classList.remove('shake');
-        mangaOverlay.classList.add('hidden');
-    }, 1000);
 }
 
 function checkWinCondition() {

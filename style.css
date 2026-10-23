@@ -125,84 +125,28 @@ body {
     pointer-events: none;
 }
 
-/* Manga Effects */
-.hidden {
-    display: none !important;
-}
-
-#manga-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 100;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.speed-lines {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 10px,
-        rgba(255,255,255,0.1) 10px,
-        rgba(255,255,255,0.1) 20px
-    );
-    animation: speed-lines-anim 0.2s linear infinite;
-    mix-blend-mode: overlay;
-}
-
-@keyframes speed-lines-anim {
-    from { background-position: 0 0; }
-    to { background-position: 100px 0; }
-}
-
-.comic-text {
-    font-family: 'Impact', fantasy;
-    font-size: 150px;
-    color: white;
-    text-shadow:
-        -4px -4px 0 #000,
-        4px -4px 0 #000,
-        -4px 4px 0 #000,
-        4px 4px 0 #000,
-        10px 10px 0px red;
-    transform: rotate(-10deg) scale(0.1);
-    opacity: 0;
-    animation: pop-text 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes pop-text {
-    0% { transform: rotate(-10deg) scale(0.1); opacity: 0; }
-    50% { transform: rotate(-5deg) scale(1.2); opacity: 1; }
-    100% { transform: rotate(0deg) scale(1); opacity: 1; }
-}
-
-.shake {
-    animation: shake-anim 0.5s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-@keyframes shake-anim {
-    10%, 90% { transform: translate3d(-5px, 0, 0); }
-    20%, 80% { transform: translate3d(5px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-10px, 0, 0); }
-    40%, 60% { transform: translate3d(10px, 0, 0); }
-}
-
+/* Subtle Localized Effects */
 .captured-anim {
-    animation: capture-shrink 0.5s ease-out forwards;
+    animation: capture-shrink 0.4s ease-out forwards;
 }
 
 @keyframes capture-shrink {
     0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.5); filter: brightness(2); }
     100% { transform: scale(0); opacity: 0; }
+}
+
+.local-comic-text {
+    position: absolute;
+    font-family: 'Impact', fantasy;
+    font-size: 1.5em;
+    color: white;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 10;
+    animation: float-up-fade 0.8s ease-out forwards;
+}
+
+@keyframes float-up-fade {
+    0% { transform: translateY(0) scale(0.8); opacity: 1; }
+    100% { transform: translateY(-30px) scale(1.2); opacity: 0; }
 }
