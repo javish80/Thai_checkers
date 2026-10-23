@@ -2,13 +2,23 @@ const boardElement = document.getElementById('board');
 const statusElement = document.getElementById('status');
 const mangaOverlay = document.getElementById('manga-overlay');
 const mangaText = document.getElementById('manga-text');
+const modeSelect = document.getElementById('mode-select');
+const restartBtn = document.getElementById('restart-btn');
 
 let boardState = []; // 8x8 array
 let currentPlayer = 'red'; // 'red' or 'cyan'
 let selectedCell = null; // {r, c}
 let validMoves = []; // Array of {r, c}
+let gameMode = 'pvp'; // 'pvp' or 'pvc'
 
 function initBoard() {
+    currentPlayer = 'red';
+    selectedCell = null;
+    validMoves = [];
+    statusElement.textContent = "Red's Turn";
+    statusElement.style.color = "white";
+    boardElement.style.pointerEvents = 'auto';
+    gameMode = modeSelect.value;
     boardState = Array(8).fill(null).map(() => Array(8).fill(null));
     boardElement.innerHTML = '';
 
@@ -39,6 +49,9 @@ function initBoard() {
 }
 
 function handleCellClick(r, c) {
+    // Prevent human interaction if it's the computer's turn
+    if (gameMode === 'pvc' && currentPlayer === 'cyan') return;
+
     // If clicked on own piece, select it
     if (boardState[r][c] === currentPlayer) {
         selectedCell = {r, c};
@@ -125,27 +138,67 @@ function movePiece(fromR, fromC, toR, toC) {
     currentPlayer = currentPlayer === 'red' ? 'cyan' : 'red';
     statusElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}'s Turn`;
 
-    checkWinCondition();
+    if (!checkWinCondition() && gameMode === 'pvc' && currentPlayer === 'cyan') {
+        setTimeout(makeComputerMove, 1000); // 1 sec delay for realism
+    }
 }
 
-function processCaptures(r, c, player) {
+function makeComputerMove() {
+    if (checkWinCondition()) return; // Don't move if game is over
+
+    let allMoves = [];
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            if (boardState[r][c] === 'cyan') {
+                const moves = getValidMoves(r, c);
+                moves.forEach(m => {
+                    // Simulate move to get captures
+                    let simulatedBoard = boardState.map(row => [...row]);
+                    simulatedBoard[m.r][m.c] = simulatedBoard[r][c];
+                    simulatedBoard[r][c] = null;
+                    const captures = getCaptures(simulatedBoard, m.r, m.c, 'cyan');
+
+                    allMoves.push({
+                        fromR: r, fromC: c,
+                        toR: m.r, toC: m.c,
+                        captures: captures.length
+                    });
+                });
+            }
+        }
+    }
+
+    if (allMoves.length > 0) {
+        // Sort to find the move that captures the most pieces
+        allMoves.sort((a, b) => b.captures - a.captures);
+
+        // Filter to keep only the best moves (in case of tie)
+        const bestCaptures = allMoves[0].captures;
+        const bestMoves = allMoves.filter(m => m.captures === bestCaptures);
+
+        // Pick a random move among the best
+        const chosenMove = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+
+        movePiece(chosenMove.fromR, chosenMove.fromC, chosenMove.toR, chosenMove.toC);
+    }
+}
+
+function getCaptures(board, r, c, player) {
     let captured = [];
 
     // 1. Intervention Capture: piece moved between opponent pieces.
-    // In Thai Checkers, intervening captures all connected opponent pieces in that line.
     // Check horizontal
     let leftCount = 0;
     for (let nc = c - 1; nc >= 0; nc--) {
-        if (boardState[r][nc] && boardState[r][nc] !== player) leftCount++;
+        if (board[r][nc] && board[r][nc] !== player) leftCount++;
         else break;
     }
     let rightCount = 0;
     for (let nc = c + 1; nc < 8; nc++) {
-        if (boardState[r][nc] && boardState[r][nc] !== player) rightCount++;
+        if (board[r][nc] && board[r][nc] !== player) rightCount++;
         else break;
     }
     if (leftCount > 0 && rightCount > 0) {
-        // Collect all in this horizontal line
         for (let nc = c - leftCount; nc <= c + rightCount; nc++) {
             if (nc !== c) captured.push({r, c: nc});
         }
@@ -154,27 +207,23 @@ function processCaptures(r, c, player) {
     // Check vertical
     let upCount = 0;
     for (let nr = r - 1; nr >= 0; nr--) {
-        if (boardState[nr][c] && boardState[nr][c] !== player) upCount++;
+        if (board[nr][c] && board[nr][c] !== player) upCount++;
         else break;
     }
     let downCount = 0;
     for (let nr = r + 1; nr < 8; nr++) {
-        if (boardState[nr][c] && boardState[nr][c] !== player) downCount++;
+        if (board[nr][c] && board[nr][c] !== player) downCount++;
         else break;
     }
     if (upCount > 0 && downCount > 0) {
-        // Collect all in this vertical line
         for (let nr = r - upCount; nr <= r + downCount; nr++) {
             if (nr !== r) captured.push({r: nr, c});
         }
     }
 
-    // 2. Custodian Capture: piece moved to trap opponent pieces against another friendly piece.
+    // 2. Custodian Capture: piece moved to trap opponent pieces.
     const directions = [
-        {dr: -1, dc: 0}, // up
-        {dr: 1, dc: 0},  // down
-        {dr: 0, dc: -1}, // left
-        {dr: 0, dc: 1}   // right
+        {dr: -1, dc: 0}, {dr: 1, dc: 0}, {dr: 0, dc: -1}, {dr: 0, dc: 1}
     ];
 
     for (const {dr, dc} of directions) {
@@ -183,15 +232,14 @@ function processCaptures(r, c, player) {
         let trapped = [];
 
         while (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
-            if (boardState[nr][nc] && boardState[nr][nc] !== player) {
+            if (board[nr][nc] && board[nr][nc] !== player) {
                 trapped.push({r: nr, c: nc});
-            } else if (boardState[nr][nc] === player) {
+            } else if (board[nr][nc] === player) {
                 if (trapped.length > 0) {
                     captured = captured.concat(trapped);
                 }
                 break;
             } else {
-                // Empty space breaks the trap line
                 break;
             }
             nr += dr;
@@ -200,7 +248,11 @@ function processCaptures(r, c, player) {
     }
 
     // Remove duplicates
-    captured = captured.filter((v, i, a) => a.findIndex(t => (t.r === v.r && t.c === v.c)) === i);
+    return captured.filter((v, i, a) => a.findIndex(t => (t.r === v.r && t.c === v.c)) === i);
+}
+
+function processCaptures(r, c, player) {
+    const captured = getCaptures(boardState, r, c, player);
 
     if (captured.length > 0) {
         triggerMangaAnimation();
@@ -264,11 +316,17 @@ function checkWinCondition() {
         statusElement.textContent = "Cyan Wins!";
         statusElement.style.color = "cyan";
         boardElement.style.pointerEvents = 'none';
+        return true;
     } else if (cyanCount <= 1) {
         statusElement.textContent = "Red Wins!";
         statusElement.style.color = "red";
         boardElement.style.pointerEvents = 'none';
+        return true;
     }
+    return false;
 }
+
+modeSelect.addEventListener('change', initBoard);
+restartBtn.addEventListener('click', initBoard);
 
 initBoard();
