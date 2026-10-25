@@ -1,5 +1,5 @@
 :root {
-    --board-size: min(100vw - 40px, 100vh - 200px, 600px);
+    --board-size: min(100vw - 40px, 100svh - 200px, 600px);
     --cell-size: calc(var(--board-size) / 8);
     --piece-size: calc(var(--cell-size) * 0.8);
 }
@@ -11,7 +11,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100svh;
     margin: 0;
     overflow: hidden;
 }
@@ -61,6 +61,7 @@ body {
     box-shadow: 5px 5px 15px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5);
     border-radius: 10px;
     border: 15px solid #5C3A21;
+    box-sizing: border-box;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
