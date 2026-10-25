@@ -1,5 +1,5 @@
 :root {
-    --board-size: 600px;
+    --board-size: min(100vw - 40px, 100vh - 200px, 600px);
     --cell-size: calc(var(--board-size) / 8);
     --piece-size: calc(var(--cell-size) * 0.8);
 }
